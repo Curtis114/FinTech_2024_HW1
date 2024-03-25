@@ -3,10 +3,17 @@ pragma solidity ^0.8.0;
 
 /* Problem 1 Interface & Contract */
 contract StudentV1 {
-    // Note: You can declare some state variable
+    uint256 private firstRegistrationCode = 1234;
+    uint256 private subsequentRegistrationCode = 123;
+    bool private hasRegisteredOnce = false;
 
     function register() external returns (uint256) {
-        // TODO: please add your implementaiton here
+        if (hasRegisteredOnce) {
+            return subsequentRegistrationCode;
+        } else {
+            hasRegisteredOnce = true;
+            return firstRegistrationCode;
+        }
     }
 }
 
@@ -16,14 +23,25 @@ interface IClassroomV2 {
 }
 
 contract StudentV2 {
-    function register() external view returns (uint256) {
-        // TODO: please add your implementaiton here
+    uint256 private firstRegistrationCode = 1234;
+    uint256 private subsequentRegistrationCode = 123;
+    bool private hasRegisteredOnce = false;
+
+    function register() external returns (uint256) {
+        if (hasRegisteredOnce) {
+            return subsequentRegistrationCode;
+        } else {
+            hasRegisteredOnce = true;
+            return firstRegistrationCode;
+        }
     }
 }
 
 /* Problem 3 Interface & Contract */
 contract StudentV3 {
+    uint256 private registrationCode = 1000;
+
     function register() external view returns (uint256) {
-        // TODO: please add your implementaiton here
+        return registrationCode;
     }
 }

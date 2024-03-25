@@ -75,30 +75,87 @@ contract NFinTech is IERC721 {
     }
 
     function setApprovalForAll(address operator, bool approved) external {
-        // TODO: please add your implementaiton here
+        require(operator != address(0), "Cannot approve the zero address");
+        require(msg.sender != operator, "Cannot approve self as operator");
+        _operatorApproval[msg.sender][operator] = approved;
+        emit ApprovalForAll(msg.sender, operator, approved);
     }
 
     function isApprovedForAll(address owner, address operator) public view returns (bool) {
-        // TODO: please add your implementaiton here
+        return _operatorApproval[owner][operator];
     }
 
     function approve(address to, uint256 tokenId) external {
-        // TODO: please add your implementaiton here
+        address owner = _owner[tokenId];
+        require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "Not authorized");
+        _tokenApproval[tokenId] = to;
+        emit Approval(owner, to, tokenId);
     }
 
     function getApproved(uint256 tokenId) public view returns (address operator) {
-        // TODO: please add your implementaiton here
+        require(_owner[tokenId] != address(0), "Token does not exist");
+        return _tokenApproval[tokenId];
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public {
-        // TODO: please add your implementaiton here
+        require(_owner[tokenId] == from, "Not the owner of the token");
+        require(to != address(0), "Transfer to zero address");
+        require(msg.sender == from || msg.sender == _tokenApproval[tokenId] || isApprovedForAll(from, msg.sender), "Not authorized");
+
+        _balances[from] -= 1;
+        _balances[to] += 1;
+        _owner[tokenId] = to;
+        emit Transfer(from, to, tokenId);
+    }
+
+    function _transferLogic(address from, address to, uint256 tokenId) private {
+        require(_owner[tokenId] == from, "Not the owner of the token");
+        require(to != address(0), "Transfer to zero address");
+        require(msg.sender == from || msg.sender == _tokenApproval[tokenId] || isApprovedForAll(from, msg.sender), "Not authorized");
+
+        _balances[from] -= 1;
+        _balances[to] += 1;
+        _owner[tokenId] = to;
+        emit Transfer(from, to, tokenId);
     }
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) public {
-        // TODO: please add your implementaiton here
+        _transferLogic(from, to, tokenId);
+        require(_checkOnERC721Received(from, to, tokenId, data), "Transfer to non ERC721Receiver implementer");
     }
 
     function safeTransferFrom(address from, address to, uint256 tokenId) public {
-        // TODO: please add your implementaiton here
+        _transferLogic(from, to, tokenId);
+        bytes memory emptyData = "";
+        require(_checkOnERC721Received(from, to, tokenId, emptyData), "Transfer to non ERC721Receiver implementer");
+    }
+
+    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data) private returns (bool) {
+        if (isContract(to)) {
+            try IERC721TokenReceiver(to).onERC721Received(msg.sender, from, tokenId, _data) returns (bytes4 retval) {
+                return retval == IERC721TokenReceiver.onERC721Received.selector;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    revert("Transfer to non ERC721Receiver implementer");
+                } else {
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        } else {
+            return true;
+        }
+    }
+
+    function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize, which returns 0 for contracts in construction, 
+        // since the code is only stored at the end of the constructor execution.
+        uint256 size;
+        assembly {
+            size := extcodesize(account)
+        }
+        return size > 0;
     }
 }
